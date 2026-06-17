@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KonversiCepat — Universal Converter</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #1A2B4A 0%, #2d1b69 50%, #1A2B4A 100%);
+      min-height: 100vh; color: #f0f0f0;
+    }
+    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    header { text-align: center; padding: 30px 0 20px; }
+    header h1 { font-size: 2rem; color: #D4A853; letter-spacing: 1px; }
+    header p { color: #a0a0b0; margin-top: 5px; font-size: 0.9rem; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin-bottom: 24px; }
+    .tab {
+      padding: 8px 14px; border-radius: 20px; border: 1px solid #3a3a5a;
+      background: rgba(255,255,255,0.05); color: #c0c0d0; cursor: pointer;
+      font-size: 0.82rem; transition: all 0.2s;
+    }
+    .tab:hover { background: rgba(255,255,255,0.1); }
+    .tab.active { background: #C05C3A; color: #fff; border-color: #C05C3A; }
+    .card {
+      background: rgba(255,255,255,0.07); border-radius: 16px;
+      padding: 28px; backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+    .input-group { margin-bottom: 18px; }
+    .input-group label { display: block; font-size: 0.85rem; color: #a0a0b0; margin-bottom: 6px; }
+    .input-row { display: flex; gap: 10px; }
+    .input-row input {
+      flex: 1; padding: 12px 14px; border-radius: 10px;
+      border: 1px solid #3a3a5a; background: rgba(0,0,0,0.3);
+      color: #fff; font-size: 1.1rem; outline: none;
+    }
+    .input-row input:focus { border-color: #D4A853; }
+    .input-row select {
+      padding: 12px 10px; border-radius: 10px;
+      border: 1px solid #3a3a5a; background: rgba(0,0,0,0.4);
+      color: #fff; font-size: 0.9rem; min-width: 100px; cursor: pointer;
+    }
+    .swap-btn {
+      display: flex; justify-content: center; margin: -5px 0;
+    }
+    .swap-btn button {
+      background: #C05C3A; border: none; color: #fff;
+      width: 36px; height: 36px; border-radius: 50%;
+      cursor: pointer; font-size: 1.2rem; transition: transform 0.2s;
+    }
+    .swap-btn button:hover { transform: rotate(180deg); }
+    .result {
+      background: rgba(212,168,83,0.1); border: 1px solid rgba(212,168,83,0.3);
+      border-radius: 12px; padding: 18px; text-align: center; margin-top: 18px;
+    }
+    .result .value { font-size: 2rem; font-weight: 700; color: #D4A853; }
+    .result .label { font-size: 0.85rem; color: #a0a0b0; margin-top: 4px; }
+    .result .formula { font-size: 0.75rem; color: #707080; margin-top: 8px; }
+    .quick-convert { margin-top: 20px; }
+    .quick-convert h3 { font-size: 0.85rem; color: #a0a0b0; margin-bottom: 10px; }
+    .quick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .quick-item {
+      background: rgba(255,255,255,0.04); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.8rem; color: #c0c0d0;
+      border: 1px solid rgba(255,255,255,0.06);
+    }
+    .quick-item span { color: #D4A853; font-weight: 600; }
+    footer { text-align: center; padding: 30px 0; color: #505060; font-size: 0.75rem; }
+    footer a { color: #C05C3A; text-decoration: none; }
+    @media (max-width: 480px) {
+      .container { padding: 12px; }
+      header h1 { font-size: 1.5rem; }
+      .card { padding: 18px; }
+      .input-row { flex-direction: column; gap: 8px; }
+      .result .value { font-size: 1.5rem; }
+      .quick-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🔄 KonversiCepat</h1>
+      <p>Universal Converter — Cepat & Akurat</p>
+    </header>
+
+    <div class="tabs" id="tabs"></div>
+
+    <div class="card">
+      <div class="input-group">
+        <label id="fromLabel">Dari</label>
+        <div class="input-row">
+          <input type="number" id="inputVal" placeholder="Masukkan angka" oninput="convert()">
+          <select id="fromUnit" onchange="convert()"></select>
+        </div>
+      </div>
+
+      <div class="swap-btn">
+        <button onclick="swapUnits()" title="Tukar">⇅</button>
+      </div>
+
+      <div class="input-group">
+        <label id="toLabel">Ke</label>
+        <div class="input-row">
+          <input type="text" id="outputVal" readonly placeholder="Hasil">
+          <select id="toUnit" onchange="convert()"></select>
+        </div>
+      </div>
+
+      <div class="result" id="resultBox" style="display:none">
+        <div class="value" id="resultValue"></div>
+        <div class="label" id="resultLabel"></div>
+        <div class="formula" id="resultFormula"></div>
+      </div>
+    </div>
+
+    <div class="quick-convert" id="quickBox" style="display:none">
+      <h3>⚡ Konversi Cepat</h3>
+      <div class="quick-grid" id="quickGrid"></div>
+    </div>
+
+    <footer>
+      <p>by <a href="https://papuakreatif.id">Kaka Yaklep</a> — AI Assistant Papua Kreatif Group</p>
+    </footer>
+  </div>
+
+  <script>
+    const categories = [
+      { id:'currency', name:'💰 Mata Uang', icon:'💰',
+        units: [
+          {id:'IDR',name:'Rupiah (IDR)',factor:1},
+          {id:'USD',name:'Dollar (USD)',factor:0.000064},
+          {id:'EUR',name:'Euro (EUR)',factor:0.000059},
+          {id:'JPY',name:'Yen (JPY)',factor:0.0097},
+          {id:'SGD',name:'Dollar SGD',factor:0.000086},
+          {id:'MYR',name:'Ringgit (MYR)',factor:0.00030},
+          {id:'AUD',name:'Dollar AUD',factor:0.000098},
+          {id:'GBP',name:'Pound (GBP)',factor:0.000051},
+          {id:'CNY',name:'Yuan (CNY)',factor:0.00046},
+          {id:'THB',name:'Baht (THB)',factor:0.0022}
+        ],
+        quick: [{f:'USD',t:'IDR',v:1},{f:'IDR',t:'USD',v:1000000},{f:'EUR',t:'IDR',v:1},{f:'JPY',t:'IDR',v:1000}]
+      },
+      { id:'weight', name:'⚖️ Berat', icon:'⚖️',
+        units: [
+          {id:'kg',name:'Kilogram',factor:1},
+          {id:'g',name:'Gram',factor:1000},
+          {id:'mg',name:'Miligram',factor:1000000},
+          {id:'ton',name:'Ton',factor:0.001},
+          {id:'lb',name:'Pound',factor:2.20462},
+          {id:'oz',name:'Ounce',factor:35.274}
+        ],
+        quick: [{f:'kg',t:'lb',v:1},{f:'kg',t:'g',v:1},{f:'lb',t:'kg',v:100},{f:'ton',t:'kg',v:1}]
+      },
+      { id:'distance', name:'📏 Jarak', icon:'📏',
+        units: [
+          {id:'km',name:'Kilometer',factor:1},
+          {id:'m',name:'Meter',factor:1000},
+          {id:'cm',name:'Centimeter',factor:100000},
+          {id:'mm',name:'Milimeter',factor:1000000},
+          {id:'mi',name:'Mil',factor:0.621371},
+          {id:'ft',name:'Kaki',factor:3280.84},
+          {id:'in',name:'Inci',factor:39370.1},
+          {id:'yd',name:'Yard',factor:1093.61}
+        ],
+        quick: [{f:'km',t:'mi',v:10},{f:'m',t:'ft',v:1},{f:'ft',t:'m',v:100},{f:'in',t:'cm',v:12}]
+      },
+      { id:'temperature', name:'🌡️ Suhu', icon:'🌡️',
+        units: [
+          {id:'C',name:'Celsius (°C)',factor:null},
+          {id:'F',name:'Fahrenheit (°F)',factor:null},
+          {id:'K',name:'Kelvin (K)',factor:null}
+        ],
+        quick: [{f:'C',t:'F',v:25},{f:'F',t:'C',v:98.6},{f:'C',t:'K',v:0},{f:'K',t:'C',v:373.15}]
+      },
+      { id:'volume', name:'🥤 Volume', icon:'🥤',
+        units: [
+          {id:'L',name:'Liter',factor:1},
+          {id:'mL',name:'Mililiter',factor:1000},
+          {id:'gal_us',name:'Gallon (US)',factor:0.264172},
+          {id:'gal_uk',name:'Gallon (UK)',factor:0.219969},
+          {id:'cup',name:'Cup (US)',factor:4.22675},
+          {id:'m3',name:'Meter Kubik',factor:0.001}
+        ],
+        quick: [{f:'L',t:'gal_us',v:1},{f:'L',t:'mL',v:1},{f:'gal_us',t:'L',v:1},{f:'cup',t:'mL',v:1}]
+      },
+      { id:'area', name:'🏠 Luas', icon:'🏠',
+        units: [
+          {id:'m2',name:'Meter Persegi',factor:1},
+          {id:'km2',name:'Km Persegi',factor:0.000001},
+          {id:'ha',name:'Hektar',factor:0.0001},
+          {id:'are',name:'Are',factor:0.01},
+          {id:'ft2',name:'Kaki Persegi',factor:10.7639},
+          {id:'acre',name:'Acre',factor:0.000247105}
+        ],
+        quick: [{f:'ha',t:'m2',v:1},{f:'m2',t:'ft2',v:1},{f:'acre',t:'ha',v:1},{f:'km2',t:'ha',v:1}]
+      },
+      { id:'speed', name:'🏎️ Kecepatan', icon:'🏎️',
+        units: [
+          {id:'kmh',name:'km/jam',factor:1},
+          {id:'ms',name:'Meter/detik',factor:0.277778},
+          {id:'mph',name:'Mil/jam',factor:0.621371},
+          {id:'kn',name:'Knot',factor:0.539957}
+        ],
+        quick: [{f:'kmh',t:'mph',v:100},{f:'kmh',t:'ms',v:100},{f:'mph',t:'kmh',v:60},{f:'kn',t:'kmh',v:1}]
+      },
+      { id:'time', name:'⏰ Waktu', icon:'⏰',
+        units: [
+          {id:'day',name:'Hari',factor:1},
+          {id:'hr',name:'Jam',factor:24},
+          {id:'min',name:'Menit',factor:1440},
+          {id:'sec',name:'Detik',factor:86400},
+          {id:'week',name:'Minggu',factor:0.142857},
+          {id:'month',name:'Bulan (30hr)',factor:0.033333},
+          {id:'year',name:'Tahun',factor:0.00273973}
+        ],
+        quick: [{f:'day',t:'hr',v:1},{f:'hr',t:'min',v:1},{f:'week',t:'day',v:1},{f:'year',t:'day',v:1}]
+      },
+      { id:'energy', name:'⚡ Energi', icon:'⚡',
+        units: [
+          {id:'J',name:'Joule',factor:1},
+          {id:'cal',name:'Kalori',factor:0.239006},
+          {id:'kcal',name:'Kilokalori',factor:0.000239006},
+          {id:'kWh',name:'Kilowatt-jam',factor:2.7778e-7},
+          {id:'eV',name:'Electron Volt',factor:6.242e+18}
+        ],
+        quick: [{f:'kcal',t:'J',v:1},{f:'kWh',t:'J',v:1},{f:'cal',t:'J',v:100},{f:'J',t:'cal',v:1000}]
+      },
+      { id:'pressure', name:'📊 Tekanan', icon:'📊',
+        units: [
+          {id:'Pa',name:'Pascal',factor:1},
+          {id:'bar',name:'Bar',factor:0.00001},
+          {id:'psi',name:'PSI',factor:0.000145038},
+          {id:'atm',name:'Atmosfer',factor:9.8692e-6},
+          {id:'mmHg',name:'mmHg',factor:0.00750062}
+        ],
+        quick: [{f:'bar',t:'psi',v:1},{f:'atm',t:'Pa',v:1},{f:'psi',t:'bar',v:14.5},{f:'bar',t:'mmHg',v:1}]
+      },
+      { id:'data', name:'💾 Data', icon:'💾',
+        units: [
+          {id:'B',name:'Byte',factor:1},
+          {id:'KB',name:'Kilobyte',factor:0.001},
+          {id:'MB',name:'Megabyte',factor:1e-6},
+          {id:'GB',name:'Gigabyte',factor:1e-9},
+          {id:'TB',name:'Terabyte',factor:1e-12},
+          {id:'bit',name:'Bit',factor:8},
+          {id:'Kbit',name:'Kilobit',factor:0.008}
+        ],
+        quick: [{f:'GB',t:'MB',v:1},{f:'TB',t:'GB',v:1},{f:'MB',t:'KB',v:1},{f:'GB',t:'TB',v:1000}]
+      }
+    ];
+
+    let currentCat = 0;
+
+    function init() {
+      const tabsEl = document.getElementById('tabs');
+      categories.forEach((cat, i) => {
+        const btn = document.createElement('div');
+        btn.className = 'tab' + (i===0?' active':'');
+        btn.textContent = cat.name;
+        btn.onclick = () => selectCategory(i);
+        tabsEl.appendChild(btn);
+      });
+      loadCategory(0);
+    }
+
+    function selectCategory(idx) {
+      document.querySelectorAll('.tab').forEach((t,i) => t.classList.toggle('active',i===idx));
+      currentCat = idx;
+      loadCategory(idx);
+    }
+
+    function loadCategory(idx) {
+      const cat = categories[idx];
+      const fromSel = document.getElementById('fromUnit');
+      const toSel = document.getElementById('toUnit');
+      fromSel.innerHTML = '';
+      toSel.innerHTML = '';
+      cat.units.forEach(u => {
+        fromSel.add(new Option(u.name, u.id));
+        toSel.add(new Option(u.name, u.id));
+      });
+      if (cat.units.length > 1) toSel.selectedIndex = 1;
+      document.getElementById('inputVal').value = '';
+      document.getElementById('outputVal').value = '';
+      document.getElementById('resultBox').style.display = 'none';
+      loadQuick();
+    }
+
+    function loadQuick() {
+      const cat = categories[currentCat];
+      const box = document.getElementById('quickBox');
+      const grid = document.getElementById('quickGrid');
+      if (!cat.quick || !cat.quick.length) { box.style.display='none'; return; }
+      box.style.display = 'block';
+      grid.innerHTML = '';
+      cat.quick.forEach(q => {
+        const r = doConvert(cat, q.v, q.f, q.t);
+        const div = document.createElement('div');
+        div.className = 'quick-item';
+        div.innerHTML = `<span>${q.v}</span> ${q.f} = <span>${fmt(r.value)}</span> ${q.t}`;
+        grid.appendChild(div);
+      });
+    }
+
+    function convert() {
+      const val = parseFloat(document.getElementById('inputVal').value);
+      const fromId = document.getElementById('fromUnit').value;
+      const toId = document.getElementById('toUnit').value;
+      const cat = categories[currentCat];
+
+      if (isNaN(val) || val === '') {
+        document.getElementById('outputVal').value = '';
+        document.getElementById('resultBox').style.display = 'none';
+        return;
+      }
+
+      const r = doConvert(cat, val, fromId, toId);
+      document.getElementById('outputVal').value = fmt(r.value);
+
+      const box = document.getElementById('resultBox');
+      box.style.display = 'block';
+      document.getElementById('resultValue').textContent = fmt(r.value) + ' ' + toId;
+      document.getElementById('resultLabel').textContent = val + ' ' + fromId + ' = ' + fmt(r.value) + ' ' + toId;
+      document.getElementById('resultFormula').textContent = r.formula || '';
+    }
+
+    function doConvert(cat, val, fromId, toId) {
+      if (cat.id === 'temperature') return convertTemp(val, fromId, toId);
+      const from = cat.units.find(u => u.id === fromId);
+      const to = cat.units.find(u => u.id === toId);
+      if (!from || !to || !from.factor || !to.factor) return {value:0,formula:''};
+      const base = val / from.factor;
+      const result = base * to.factor;
+      return {
+        value: result,
+        formula: `1 ${fromId} = ${fmt(to.factor/from.factor)} ${toId}`
+      };
+    }
+
+    function convertTemp(val, from, to) {
+      let celsius;
+      if (from==='C') celsius=val;
+      else if (from==='F') celsius=(val-32)*5/9;
+      else celsius=val-273.15;
+
+      let result, formula;
+      if (to==='C') { result=celsius; formula=`°C = (°F - 32) × 5/9`; }
+      else if (to==='F') { result=celsius*9/5+32; formula=`°F = (°C × 9/5) + 32`; }
+      else { result=celsius+273.15; formula=`K = °C + 273.15`; }
+
+      return {value:result, formula};
+    }
+
+    function swapUnits() {
+      const from = document.getElementById('fromUnit');
+      const to = document.getElementById('toUnit');
+      const tmp = from.value;
+      from.value = to.value;
+      to.value = tmp;
+      convert();
+    }
+
+    function fmt(n) {
+      if (Math.abs(n) >= 1e9 || (Math.abs(n) < 0.0001 && n !== 0)) return n.toExponential(4);
+      if (Number.isInteger(n)) return n.toLocaleString('id-ID');
+      const d = Math.abs(n) >= 100 ? 2 : Math.abs(n) >= 1 ? 4 : 6;
+      return parseFloat(n.toFixed(d)).toLocaleString('id-ID', {maximumFractionDigits:d});
+    }
+
+    init();
+  </script>
+</body>
+</html>
